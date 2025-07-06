@@ -26,11 +26,19 @@ export const DashboardPanel: React.FC = () => {
   // Filter and sort state
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'Delivering' | 'Paused' | 'Idle'>('all');
   const [sortOption, setSortOption] = React.useState<'id-asc' | 'id-desc' | 'name-asc' | 'name-desc'>('id-asc');
+  // Search state
+  const [searchQuery, setSearchQuery] = React.useState('');
 
   // Filter and sort drivers before pagination
   let filteredDrivers = drivers;
   if (statusFilter !== 'all') {
     filteredDrivers = filteredDrivers.filter(d => d.status === statusFilter);
+  }
+  if (searchQuery.trim() !== '') {
+    const query = searchQuery.trim().toLowerCase();
+    filteredDrivers = filteredDrivers.filter(d =>
+      d.name.toLowerCase().includes(query) || d.id.toString().includes(query)
+    );
   }
   if (sortOption === 'id-asc') {
     filteredDrivers = [...filteredDrivers].sort((a, b) => a.id - b.id);
@@ -160,6 +168,22 @@ export const DashboardPanel: React.FC = () => {
           
           {/* Controls */}
           <div className="controls-grid">
+            {/* Search Bar */}
+            <div className="control-item" style={{ minWidth: 200 }}>
+              <label className="control-label">Search:</label>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => {
+                  setSearchQuery(e.target.value);
+                  setPage(1); // Reset to first page on search
+                }}
+                placeholder="Search by name or ID"
+                className="control-input"
+                style={{ width: '100%' }}
+              />
+            </div>
+
             {/* Driver Selection Dropdown */}
             <div className="control-item">
               <label className="control-label">Select Driver:</label>

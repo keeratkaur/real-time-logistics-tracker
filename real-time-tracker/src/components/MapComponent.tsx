@@ -4,6 +4,7 @@ import L from 'leaflet';
 import { Driver } from '../types/driver';
 import { useAppSelector } from '../store/hooks';
 import 'leaflet/dist/leaflet.css';
+import { LatLngBounds } from 'leaflet';
 
 // Fix for default marker icons in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -195,6 +196,9 @@ const MapComponent: React.FC = () => {
   // Maximize map state
   const [mapMaximized, setMapMaximized] = useState(false);
 
+  // Add state for quick driver selector highlight
+  const [hoveredDriverId, setHoveredDriverId] = useState<number | null>(null);
+
   // Fullscreen API handlers
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -247,16 +251,82 @@ const MapComponent: React.FC = () => {
     }, 300);
   }, [mapMaximized]);
 
+  // Fit to all drivers handler
+  const handleFitToAllDrivers = () => {
+    if (mapRef.current && drivers.length > 0) {
+      const bounds = new LatLngBounds(
+        drivers.map((driver) => [driver.lat, driver.lng] as [number, number])
+      );
+      mapRef.current.fitBounds(bounds, { padding: [60, 60] });
+    }
+  };
+
   return (
-    <div ref={wrapperRef} className={`map-wrapper${mapMaximized ? ' maximized' : ''}`}>
-      {/* Maximize/Minimize Map Button */}
-      <button
-        className="map-maximize-btn"
-        aria-label={mapMaximized ? 'Minimize map' : 'Maximize map'}
-        onClick={handleMapMaximize}
-      >
-        {mapMaximized ? '🗕' : '🗖'}
-      </button>
+    <div ref={wrapperRef} className={`map-wrapper${mapMaximized ? ' maximized' : ''}`} style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.10)', borderRadius: 16, border: '1.5px solid #e5e7eb', position: 'relative' }}>
+      {/* Map Controls Overlay */}
+      <div style={{ position: 'absolute', top: 16, left: 16, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <button
+          className="map-maximize-btn"
+          aria-label={mapMaximized ? 'Minimize map' : 'Maximize map'}
+          onClick={handleMapMaximize}
+          style={{ marginBottom: 8 }}
+        >
+          {mapMaximized ? '🗕' : '🗖'}
+        </button>
+        <button
+          className="fit-all-btn"
+          aria-label="Fit to all drivers"
+          onClick={handleFitToAllDrivers}
+          style={{ background: '#fff', border: '1px solid #d1d5db', borderRadius: 8, padding: '4px 10px', fontWeight: 500, cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}
+        >
+          Fit to All Drivers
+        </button>
+      </div>
+      {/* Connection status indicator - moved to top left below controls */}
+      <div style={{ position: 'absolute', top: 70, left: 16, zIndex: 1001, background: 'rgba(255,255,255,0.92)', borderRadius: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', padding: '4px 14px', fontWeight: 600, fontSize: 14, color: isConnected ? '#16a34a' : '#dc2626', border: isConnected ? '1.5px solid #bbf7d0' : '1.5px solid #fecaca', display: 'inline-block', minWidth: 90, textAlign: 'center' }}>
+        {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+      </div>
+      {/* Quick Driver Selector */}
+      <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 1000, width: 180, maxHeight: 320, overflowY: 'auto', background: 'rgba(255,255,255,0.97)', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.10)', border: '1px solid #e5e7eb', padding: 8 }}>
+        <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 6 }}>Drivers</div>
+        {drivers.length === 0 ? (
+          <div style={{ color: '#888', fontSize: 13 }}>No drivers</div>
+        ) : (
+          drivers.map(driver => (
+            <div
+              key={driver.id}
+              onClick={() => {
+                if (mapRef.current) {
+                  mapRef.current.flyTo([driver.lat, driver.lng], 15, { duration: 1.2 });
+                }
+                // Optionally, dispatch selection
+                // dispatch(setSelectedDriverId(driver.id));
+              }}
+              onMouseEnter={() => setHoveredDriverId(driver.id)}
+              onMouseLeave={() => setHoveredDriverId(null)}
+              style={{
+                padding: '6px 8px',
+                borderRadius: 7,
+                background: driver.id === selectedDriverId ? 'var(--primary-100, #e0e7ff)' : hoveredDriverId === driver.id ? '#f3f4f6' : 'transparent',
+                fontWeight: driver.id === selectedDriverId ? 700 : 500,
+                color: driver.id === selectedDriverId ? 'var(--primary-700, #3730a3)' : '#222',
+                cursor: 'pointer',
+                marginBottom: 2,
+                fontSize: 14,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                border: driver.id === selectedDriverId ? '1.5px solid var(--primary-400, #818cf8)' : '1px solid transparent',
+                boxShadow: driver.id === selectedDriverId ? '0 1px 4px rgba(59,130,246,0.08)' : 'none',
+                transition: 'background 0.15s, border 0.15s',
+              }}
+            >
+              <span style={{ fontSize: 16, marginRight: 4 }}>🚛</span>
+              <span>{driver.name} <span style={{ color: '#888', fontWeight: 400, fontSize: 12 }}>(ID: {driver.id})</span></span>
+            </div>
+          ))
+        )}
+      </div>
       <MapContainer
         center={mapCenter as [number, number]}
         zoom={12}
@@ -454,11 +524,6 @@ const MapComponent: React.FC = () => {
         })}
       </MapContainer>
       
-      {/* Connection status indicator */}
-      <div className={`map-status-indicator ${isConnected ? 'connected' : 'disconnected'}`}>
-        {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
-      </div>
-
       {/* Pending Actions Counter */}
       {Object.keys(pendingActions).length > 0 && (
         <div className="pending-actions-counter">
