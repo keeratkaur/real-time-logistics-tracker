@@ -32,6 +32,35 @@ const nlLocations = [
   { name: 'Clarenville', lat: 48.1500, lng: -53.9667 }
 ];
 
+// Sample addresses for destinations
+const sampleAddresses = [
+  '123 Water Street, St. John\'s, NL',
+  '456 Duckworth Street, St. John\'s, NL',
+  '789 Torbay Road, St. John\'s, NL',
+  '321 Main Street, Mount Pearl, NL',
+  '654 Park Avenue, Corner Brook, NL',
+  '987 Broadway, Grand Falls-Windsor, NL',
+  '147 Airport Boulevard, Gander, NL',
+  '258 Queen Street, Stephenville, NL',
+  '369 Main Street, Deer Lake, NL',
+  '741 Churchill Street, Labrador City, NL',
+  '852 Hamilton River Road, Happy Valley-Goose Bay, NL',
+  '963 Main Street, Marystown, NL'
+];
+
+function generateDestination() {
+  const location = nlLocations[Math.floor(Math.random() * nlLocations.length)];
+  const address = sampleAddresses[Math.floor(Math.random() * sampleAddresses.length)];
+  const variation = 0.005; // Small variation around the city center
+  
+  return {
+    name: location.name,
+    lat: location.lat + (Math.random() - 0.5) * variation,
+    lng: location.lng + (Math.random() - 0.5) * variation,
+    address: address
+  };
+}
+
 const drivers = Array.from({ length: 12 }, (_, i) => {
   const status = statuses[Math.floor(Math.random() * statuses.length)];
   let eta = null;
@@ -54,6 +83,8 @@ const drivers = Array.from({ length: 12 }, (_, i) => {
     lng: location.lng + (Math.random() - 0.5) * variation,
     status: status,
     eta: eta,
+    initialDestination: generateDestination(),
+    finalDestination: generateDestination()
   };
 });
 
