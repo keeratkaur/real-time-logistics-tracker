@@ -4,7 +4,7 @@ import uiReducer from './uiSlice';
 
 export const store = configureStore({
   reducer: {
-    drivers: driversReducer,
+    drivers: driversReducer, //function to update the driver data
     ui: uiReducer,
   },
   middleware: (getDefaultMiddleware) =>
