@@ -183,13 +183,7 @@ npm test -- --coverage
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👨‍💻 Author
-
-Created as a take-home assignment demonstrating modern React development practices, TypeScript implementation, and real-time application architecture.
 
 ---
 
